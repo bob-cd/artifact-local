@@ -7,7 +7,7 @@ This is a simple artifact store enabling Bob to store build artifacts.
 - [Poetry](https://poetry.eustace.io)
 
 #### Running
-- `poerty install` to install dependencies.
+- `poetry install` to install dependencies.
 - `python3 artifact-local/server.py` will start the plugin on port 8001.
 
 #### API

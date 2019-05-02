@@ -25,41 +25,46 @@ PORT = 8001
 DIR_NAME = "artifacts"
 
 
-@app.route("/bob_artifact/<key:[^/].*?>", methods=["GET", "POST", "DELETE"])
+@app.post("/bob_artifact/<key:[^/].*?>")
 async def receive(request, key):
-    if request.method == "POST":
-        data = request.files.get("data")
+    data = request.files.get("data")
 
-        if data is None:
-            return response.text("Invalid request", status=400)
+    if data is None:
+        return response.text("Invalid request", status=400)
 
-        path = os.path.join(DIR_NAME, key)
+    path = os.path.join(DIR_NAME, key)
 
-        pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
+    pathlib.Path(path).parent.mkdir(parents=True, exist_ok=True)
 
-        async with aiofiles.open(path, "wb") as artifact:
-            await artifact.write(data.body)
+    async with aiofiles.open(path, "wb") as artifact:
+        await artifact.write(data.body)
 
-        return response.text("Ok")
-    elif request.method == "GET":
-        path = os.path.join(DIR_NAME, key)
+    return response.text("Ok")
 
-        return (
-            await response.file(path)
-            if os.path.exists(path)
-            else response.text("No such artifact", status=404)
-        )
+
+@app.get("/bob_artifact/<key:[^/].*?>")
+async def send(_, key):
+    path = os.path.join(DIR_NAME, key)
+
+    return (
+        await response.file(path)
+        if os.path.exists(path)
+        else response.text("No such artifact", status=404)
+    )
+
+
+@app.delete("/bob_artifact/<key:[^/].*?>")
+async def delete(_, key):
+    path = os.path.join(DIR_NAME, key)
+
+    if not os.path.exists(path):
+        return response.text("No such artifact", status=404)
+    elif os.path.isfile(path):
+        os.unlink(path)
     else:
-        path = os.path.join(DIR_NAME, key)
+        shutil.rmtree(path)
 
-        if not os.path.exists(path):
-            return response.text("No such artifact", status=404)
-        elif os.path.isfile(path):
-            os.unlink(path)
-        else:
-            shutil.rmtree(path)
-
-        return response.text("Ok")
+    return response.text("Ok")
 
 
 @app.route("/ping")
