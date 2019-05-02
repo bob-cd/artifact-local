@@ -15,6 +15,7 @@
 
 import os
 import pathlib
+import shutil
 
 import aiofiles
 from sanic import Sanic, response
@@ -24,7 +25,7 @@ PORT = 8001
 DIR_NAME = "artifacts"
 
 
-@app.route("/bob_artifact/<key:[^/].*?>", methods=["GET", "POST"])
+@app.route("/bob_artifact/<key:[^/].*?>", methods=["GET", "POST", "DELETE"])
 async def receive(request, key):
     if request.method == "POST":
         data = request.files.get("data")
@@ -40,7 +41,7 @@ async def receive(request, key):
             await artifact.write(data.body)
 
         return response.text("Ok")
-    else:
+    elif request.method == "GET":
         path = os.path.join(DIR_NAME, key)
 
         return (
@@ -48,6 +49,17 @@ async def receive(request, key):
             if os.path.exists(path)
             else response.text("No such artifact", status=404)
         )
+    else:
+        path = os.path.join(DIR_NAME, key)
+
+        if not os.path.exists(path):
+            return response.text("No such artifact", status=404)
+        elif os.path.isfile(path):
+            os.unlink(path)
+        else:
+            shutil.rmtree(path)
+
+        return response.text("Ok")
 
 
 @app.route("/ping")
