@@ -8,7 +8,7 @@ This is a simple artifact store enabling Bob to store build artifacts.
 
 #### Running
 - `poetry install` to install dependencies.
-- `python3 artifact-local/server.py` will start the plugin on port 8001.
+- `python3 artifact-local/main.py` will start the plugin on port 8001.
 
 #### API
 - `GET /bob_artifact/<path>`: Returns the artifact at the path if exists.
