@@ -13,17 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-FROM python:3.7-alpine
+FROM scratch
 
-WORKDIR /opt
+COPY main .
 
-ADD artifact-local/main.py .
-ADD poetry.lock .
-ADD pyproject.toml .
-
-RUN apk add --no-cache build-base libffi-dev openssl-dev
-RUN pip install poetry
-RUN poetry config virtualenvs.create false
-RUN poetry install
-
-ENTRYPOINT ["python3", "main.py"]
+ENTRYPOINT ["./main"]
