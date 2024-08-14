@@ -16,6 +16,8 @@ import (
 	"path/filepath"
 )
 
+const DIR_NAME = "artifacts"
+
 func ping(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Ack")
 }
@@ -71,7 +73,7 @@ func delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func send(w http.ResponseWriter, r *http.Request) {
-	http.ServeFile(w, r, filepath.Join("artifacts", r.PathValue("artifactPath")))
+	http.ServeFile(w, r, filepath.Join(DIR_NAME, r.PathValue("artifactPath")))
 }
 
 func main() {
