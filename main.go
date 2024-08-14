@@ -1,10 +1,10 @@
 /* This file is part of artifact-local.
-* Copyright 2018-2021 Rahul De
+* Copyright 2018- Rahul De
 *
 * Use of this source code is governed by an MIT-style
 * license that can be found in the LICENSE file or at
 * https://opensource.org/licenses/MIT.
-*/
+ */
 
 package main
 
@@ -14,27 +14,23 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-
-	"github.com/julienschmidt/httprouter"
 )
 
-var DIR_NAME = "artifacts"
-
-func Ping(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func ping(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Ack")
 }
 
-func Receive(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func receive(w http.ResponseWriter, r *http.Request) {
 	dir := filepath.Join(
 		DIR_NAME,
-		params.ByName("group"),
-		params.ByName("name"),
-		params.ByName("runId"),
+		r.PathValue("group"),
+		r.PathValue("name"),
+		r.PathValue("runId"),
 	)
 
 	os.MkdirAll(dir, os.ModePerm)
 
-	artifact, err := os.Create(filepath.Join(dir, params.ByName("artifact")))
+	artifact, err := os.Create(filepath.Join(dir, r.PathValue("artifact")))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		fmt.Fprint(w, err.Error())
@@ -54,13 +50,13 @@ func Receive(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	fmt.Fprint(w, "Ok")
 }
 
-func Delete(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
+func delete(w http.ResponseWriter, r *http.Request) {
 	artifact := filepath.Join(
 		DIR_NAME,
-		params.ByName("group"),
-		params.ByName("name"),
-		params.ByName("runId"),
-		params.ByName("artifact"),
+		r.PathValue("group"),
+		r.PathValue("name"),
+		r.PathValue("runId"),
+		r.PathValue("artifact"),
 	)
 
 	err := os.Remove(artifact)
@@ -74,18 +70,22 @@ func Delete(w http.ResponseWriter, r *http.Request, params httprouter.Params) {
 	fmt.Fprint(w, "Ok")
 }
 
+func send(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, filepath.Join("artifacts", r.PathValue("artifactPath")))
+}
+
 func main() {
 	port, exists := os.LookupEnv("PORT")
 	if !exists {
 		port = "8001"
 	}
-	router := httprouter.New()
+	mux := http.NewServeMux()
+	path := "/bob_artifact/{group}/{name}/{runId}/{artifact}"
 
-	router.GET("/ping", Ping)
-	router.POST("/bob_artifact/:group/:name/:runId/:artifact", Receive)
-	router.DELETE("/bob_artifact/:group/:name/:runId/:artifact", Delete)
-	router.ServeFiles("/bob_artifact/*filepath", http.Dir(DIR_NAME))
+	mux.HandleFunc("GET /ping", ping)
+	mux.HandleFunc("POST "+path, receive)
+	mux.HandleFunc("DELETE "+path, delete)
+	mux.HandleFunc("GET /bob_artifact/{artifactPath...}", send)
 
-	http.Handle("/", router)
-	http.ListenAndServe(":"+port, nil)
+	http.ListenAndServe(":"+port, mux)
 }
